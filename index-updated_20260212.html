@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500&family=Noto+Serif+SC:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* 提取自你的封面图色调 */
+            --bg-color: #E6DAD5; 
+            --text-color: #111;
+            --accent-color: #000;
+            --secondary-text: #444;
+            --glass-bg: rgba(255, 255, 255, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Noto Sans SC', sans-serif;
+            overflow: hidden; /* 防止默认滚动，使用JS控制或CSS Scroll Snap */
+        }
+
+        /* 模拟图片中的噪点质感 */
+        .grain-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* 滚动容器 */
+        .scroll-container {
+            height: 100vh;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+        }
+
+        section {
+            height: 100vh;
+            width: 100%;
+            scroll-snap-align: start;
+            position: relative;
+            padding: 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* 通用排版样式 */
+        h1, h2, h3, .serif-font {
+            font-family: 'Noto Serif SC', serif;
+        }
+        
+        .number-indicator {
+            font-family: 'Playfair Display', serif;
+            font-size: 4rem;
+            font-weight: 700;
+            position: absolute;
+            top: 10%;
+            left: 5%;
+            z-index: 10;
+        }
+        
+        .number-indicator span {
+            font-size: 1.5rem;
+            opacity: 0.5;
+            font-weight: 400;
+        }
+
+        .logo-mark {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            z-index: 100;
+        }
+        
+        .logo-mark img {
+            width: 80px;
+            height: auto;
+            display: block;
+        }
+
+        /* --- P1: 封面 (复刻附件风格) --- */
+        .page-cover {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            align-items: center;
+        }
+
+        .cover-content-left {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            height: 80%;
+            align-items: flex-start;
+        }
+
+        .intro-list {
+            margin-top: auto;
+            list-style: none;
+            font-size: 1rem;
+            line-height: 1.8;
+            color: var(--secondary-text);
+        }
+
+        .cover-center-img {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* 这里的图片你需要替换 */
+        .hero-img {
+            max-height: 80vh;
+            width: auto;
+            object-fit: contain;
+            mix-blend-mode: multiply; /* 模拟图片融合背景的效果 */
+            filter: contrast(1.1);
+        }
+
+        .cover-content-right {
+            text-align: right;
+            height: 80%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .main-title {
+            font-size: 5rem;
+            font-weight: 300;
+            line-height: 1.2;
+            margin-bottom: 2rem;
+        }
+        
+        .main-title .sub {
+            display: block;
+            font-size: 1.2rem;
+            text-align: right;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .cat-box {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 1rem;
+        }
+        
+        .cat-img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            /* 模拟图片遮罩 */
+        }
+
+        /* --- P2: 个人简介 --- */
+        .page-profile {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .profile-card {
+            background: var(--glass-bg);
+            padding: 3rem;
+            border: 1px solid rgba(0,0,0,0.05);
+            backdrop-filter: blur(5px);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 1rem 2rem;
+            margin-top: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .info-label {
+            color: var(--secondary-text);
+            font-weight: 300;
+        }
+
+        .skills-block {
+            margin-top: 2rem;
+            border-top: 1px solid #000;
+            padding-top: 2rem;
+        }
+
+        /* --- P3: AI技能 --- */
+        .page-skills {
+            padding-top: 8rem;
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .skill-item {
+            padding: 2rem;
+            border-left: 2px solid #000;
+        }
+
+        .skill-item h3 {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .skill-item p {
+            line-height: 1.8;
+            font-size: 0.95rem;
+            color: #333;
+        }
+
+        /* --- P4: 项目展示 (布局核心) --- */
+        .page-projects {
+            padding-top: 6rem;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        
+        .page-projects .number-indicator {
+            position: relative;
+            top: auto;
+            left: auto;
+            margin-bottom: 0.5rem;
+            padding-left: 1rem;
+        }
+
+        .projects-scroll-wrapper {
+            display: flex;
+            gap: 1.2rem;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+            width: 100%;
+            flex: 1;
+            max-height: calc(100vh - 14rem);
+            align-items: stretch;
+            /* 隐藏横向滚动条但保留功能 */
+            scrollbar-width: none; 
+        }
+
+        /* 创业 / 公司经历板块 */
+        .founder-card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.95), #fff);
+            border: 1px solid rgba(0,0,0,0.06);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            border-radius: 8px;
+        }
+
+        .founder-img {
+            width: 160px;
+            height: 120px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: #eee;
+            border-radius: 6px;
+        }
+
+        .founder-content h3 {
+            font-family: 'Noto Serif SC', serif;
+            margin-bottom: 0.4rem;
+            font-size: 1.4rem;
+        }
+
+        .founder-content p {
+            color: #333;
+            line-height: 1.6;
+            font-size: 0.95rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .project-card {
+            min-width: 220px;
+            max-width: 240px;
+            height: auto;
+            max-height: 100%;
+            background: #fff;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #000;
+            transition: transform 0.3s;
+            flex-shrink: 0;
+        }
+
+        .project-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .project-img-area {
+            height: 200px;
+            background-color: #ddd;
+            margin-bottom: 0.8rem;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .project-img-area img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .project-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px dashed #ccc;
+            padding-bottom: 0.3rem;
+        }
+
+        .project-desc {
+            font-size: 0.8rem;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+
+        .project-link {
+            margin-top: 1rem;
+            display: inline-block;
+            text-decoration: none;
+            color: #fff;
+            background: #000;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        
+
+        
+        /* --- P5: 未来规划 --- */
+        .page-future {
+            padding-top: 10rem;
+        }
+
+        .future-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin-top: 3rem;
+            max-width: 900px;
+        }
+
+        .future-item {
+            padding: 2rem;
+            border-left: 2px solid #000;
+            background: var(--glass-bg);
+            backdrop-filter: blur(5px);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .future-item h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .future-item p {
+            line-height: 1.8;
+            font-size: 0.95rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        /* 技能总结bullet */
+        .skill-summary {
+            font-weight: 500;
+            font-size: 1rem !important;
+            color: #000 !important;
+            margin-bottom: 0.8rem;
+            padding-left: 0.8rem;
+            border-left: 3px solid var(--accent-color);
+            line-height: 1.6;
+        }
+
+        /* 封面导航栏 */
+        .cover-nav {
+            background: var(--glass-bg);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+            text-align: left;
+            margin-top: auto;
+        }
+
+        .cover-nav-link {
+            display: block;
+            text-decoration: none;
+            color: var(--text-color);
+            font-size: 0.85rem;
+            line-height: 2.2;
+            transition: color 0.2s;
+        }
+
+        .cover-nav-link:hover {
+            color: #666;
+            text-decoration: underline;
+        }
+
+        /* 回到封面按钮 */
+        .back-to-cover {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            text-decoration: none;
+            color: var(--text-color);
+            font-size: 0.8rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            transition: background 0.2s;
+            z-index: 10;
+        }
+
+        .back-to-cover:hover {
+            background: rgba(255,255,255,0.6);
+        }
+
+/* --- P6: 个人信息 (二维码展示) --- */
+        .page-contact {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 8rem;
+        }
+
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .qr-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 2rem;
+            background: var(--glass-bg);
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+        }
+
+        .qr-item h3 {
+            font-size: 1.2rem;
+            text-align: center;
+            color: var(--text-color);
+        }
+
+        .qr-placeholder {
+            width: 280px;
+            height: 280px;
+            background: #fff;
+            border: 2px dashed #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+
+        .qr-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            /* 全局调整 */
+            section { 
+                padding: 1.5rem; 
+                height: auto;
+                min-height: 100vh;
+            }
+            
+            .logo-mark {
+                top: 1rem;
+                left: 1rem;
+            }
+            
+            .logo-mark img {
+                width: 50px;
+            }
+            
+            .number-indicator {
+                font-size: 2.5rem;
+                position: relative;
+                top: auto;
+                left: auto;
+                margin-bottom: 1rem;
+            }
+            
+            .number-indicator span {
+                font-size: 1rem;
+            }
+            
+            /* P1 封面 */
+            .page-cover { 
+                grid-template-columns: 1fr; 
+                padding-top: 4rem;
+            }
+            .cover-center-img { display: none; }
+            .cover-content-left { display: none; }
+            .cover-content-right { 
+                text-align: left;
+                height: auto;
+            }
+            .main-title { 
+                font-size: 2.5rem; 
+                text-align: left; 
+            }
+            .cat-box { 
+                align-items: flex-start;
+                margin-top: 2rem;
+            }
+            
+            /* P2 个人简介 */
+            .page-profile { 
+                grid-template-columns: 1fr; 
+                gap: 1.5rem;
+                padding-top: 4rem;
+                align-items: flex-start;
+            }
+            .page-profile > div:first-of-type h1 {
+                font-size: 2.5rem;
+            }
+            .profile-card {
+                padding: 1.5rem;
+            }
+            .info-grid {
+                font-size: 0.95rem;
+                gap: 0.8rem 1rem;
+            }
+            
+            /* P3 技能 */
+            .page-skills { 
+                padding-top: 4rem; 
+            }
+            .skills-grid { 
+                grid-template-columns: 1fr; 
+                gap: 1rem;
+            }
+            .skill-item {
+                padding: 1rem;
+            }
+            .skill-item h3 {
+                font-size: 1.2rem;
+            }
+            .skill-item p {
+                font-size: 0.9rem;
+            }
+            
+            /* P4 项目展示 */
+            .page-projects {
+                padding-top: 4rem;
+            }
+            .page-projects .number-indicator {
+                padding-left: 0;
+            }
+            .projects-scroll-wrapper {
+                gap: 1rem;
+                max-height: none;
+                padding-left: 0;
+            }
+            .founder-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .founder-img {
+                width: 100%;
+                height: 180px;
+                border-radius: 6px;
+            }
+            .project-card {
+                min-width: 200px;
+                max-width: 220px;
+            }
+            .project-img-area {
+                height: 150px;
+            }
+            .project-title {
+                font-size: 1.1rem;
+            }
+            .project-desc {
+                font-size: 0.85rem;
+            }
+            
+            
+            /* 未来规划 */
+            .page-future {
+                padding-top: 4rem;
+            }
+            .future-grid {
+                gap: 1.5rem;
+            }
+            .future-item {
+                padding: 1.5rem;
+            }
+            .future-item h3 {
+                font-size: 1.1rem;
+            }
+            .future-item p {
+                font-size: 0.9rem;
+            }
+            
+            /* 封面导航 */
+            .cover-nav {
+                padding: 1rem;
+            }
+            .cover-nav-link {
+                font-size: 0.8rem;
+                line-height: 2;
+            }
+            .back-to-cover {
+                bottom: 1rem;
+                right: 1rem;
+                font-size: 0.75rem;
+                padding: 0.4rem 0.8rem;
+            }
+
+            
+            /* P6 个人信息 */
+            .page-contact {
+                padding-top: 4rem;
+                align-items: flex-start;
+            }
+            .qr-grid { 
+                grid-template-columns: 1fr; 
+                gap: 1.5rem;
+            }
+            .qr-placeholder {
+                width: 220px;
+                height: 220px;
+            }
+        }
+        
+        /* 小屏手机适配 */
+        @media (max-width: 480px) {
+            section {
+                padding: 1rem;
+            }
+            .main-title {
+                font-size: 2rem;
+            }
+            .project-card {
+                min-width: 190px;
+                max-width: 210px;
+            }
+            .number-indicator {
+                font-size: 2rem;
+            }
+            
+            .future-item h3 {
+                font-size: 1rem;
+            }
+            .future-item p {
+                font-size: 0.85rem;
+            }
+
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="grain-overlay"></div>
+
+    <div class="logo-mark">
+        <img src="logo.png" alt="Logo">
+    </div>
+
+    <div class="scroll-container">
+        
+        <section id="p1" class="page-cover">
+            <div class="number-indicator">01 <span>/ 06</span></div>
+            
+            <div class="cover-content-left">
+                <div class="cover-nav">
+                    <p style="font-size: 0.8rem; color: #666; margin-bottom: 0.8rem;">点击跳转到目标页</p>
+                    <a href="#p2" class="cover-nav-link">· AI技能</a>
+                    <a href="#p3" class="cover-nav-link">· AI项目</a>
+                    <a href="#p4" class="cover-nav-link">· 未来规划</a>
+                    <a href="#p5" class="cover-nav-link">· 工作技能&amp;背景</a>
+                    <a href="#p6" class="cover-nav-link">· 建联方式</a>
+                </div>
+            </div>
+
+            <div class="cover-center-img">
+                <img src="cover-photo.png" alt="Profile" class="hero-img" onerror="this.src='https://placehold.co/400x800/E6DAD5/000?text=Your+Photo'">
+            </div>
+
+            <div class="cover-content-right">
+                <div class="top-text">
+                    <span style="display:block; font-size: 1.4rem; font-weight: 700; font-family: 'Noto Serif SC', serif;">个人简历（AI版）</span>
+                </div>
+
+                <div>
+                    <h1 class="main-title">
+                        托托<br>
+                    </h1>
+                </div>
+            </div>
+        </section>
+
+        <section id="p2" class="page-skills">
+            <a href="#p1" class="back-to-cover">← 回到封面</a>
+            <div class="number-indicator">02 <span>AI技能</span></div>
+            
+            <div class="skills-grid">
+                <div class="skill-item">
+                    <h3>AI编程</h3>
+                    <p class="skill-summary">具备从0到1的AI项目开发能力，已独立交付多个实用项目</p>
+                    <p>能够用IDE+Copilot的Agent形式完成从0到1的项目开发，已经独立编写10个左右项目并投入实际使用，类型包括A2A社交/互助陪诊应用/RPA脚本/剧情互动式游戏/语境式背单词软件等</p>
+                </div>
+
+                <div class="skill-item">
+                    <h3>提示词工程</h3>
+                    <p class="skill-summary">精通多模型差异化协作与“元指涉”式AI使用法，最大化AI生产质量</p>
+                    <p>清楚Claude、Gemini、GPT、Kimi、智谱等LLM的差异化优势，并知道在什么场景下组合使用；“元指涉”指所有不清楚如何指挥AI工作的问题，都可以通过明确诉求并让AI搭建来解决。</p>
+                </div>
+
+                <div class="skill-item">
+                    <h3>视觉生成</h3>
+                    <p class="skill-summary">覆盖图像生成到视频制作的全链路AI视觉能力</p>
+                    <p>熟悉MJ、Nano banana、PS创成、figma、即梦、可灵的生成及调试流程，通过AI协作逐渐习得视觉制作方法，曾经完成过电视台赛事全程的视觉物料。</p>
+                </div>
+
+                <div class="skill-item">
+                    <h3>拥有个人工作和生活的Agent系统</h3>
+                    <p class="skill-summary">搭建更适合Agent合作的本地文件系统，绝大多数工作只需要简单指令即可完成</p>
+                    <p>从2026年开始重洗了自己的工作模式，按照执行场景和可复用资产的相似性，重新搭建了面向个人工作及生活的Agent系统。文件即接口。目前85%的工作均由Agent自动化流程完成</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="p3" class="page-projects">
+            <a href="#p1" class="back-to-cover">← 回到封面</a>
+            <div class="number-indicator">03 <span>AI项目</span></div>
+            <p style="margin-bottom: 2rem; margin-left: 5px; color: #666;">左滑查看更多</p>
+
+            <!-- 医依项目 -->
+            <div class="founder-card">
+                <img src="yiyi-project.jpg" alt="医依项目" class="founder-img" onerror="this.src='https://placehold.co/320x240/ddd/000?text=医依项目'">
+                <div class="founder-content">
+                    <h3>实时匹配互助陪诊应用｜医依</h3>
+                    <p>医依是一款针对独自就医群体设计的Human to Human陪诊匹配App/小程序，通过TTS和基于RAG的AI实时分析为用户建立个人陪诊档案，核心功能是基于LBS进行互助/小额/专业陪诊服务的实时匹配，并让AI提供非医疗建议方向的智能辅助，让基础陪诊的交易模式朝去中心化、个性化的社区互助转向。</p>
+                    <p style="margin-top:0.5rem;"><a href="https://vsyovoda-sys.github.io/yiyi-escort-demo/slides.html" target="_blank" class="project-link">访问项目</a> <span style="font-size:0.8rem; color:#999;">
+                </div>
+            </div>
+
+            <div class="projects-scroll-wrapper">
+
+                <div class="project-card">
+                    <div class="project-img-area">
+                        <img src="endless-dreams.png" alt="无尽之梦" style="object-fit: contain; background: linear-gradient(180deg, #c8b6e8, #a8c8f0);">
+                    </div>
+                    <div class="project-title">无尽之梦 — A2A 潜意识社交</div>
+                    <p class="project-desc">Second Me A2A 黑客松参赛作品。基于 A2A 协议的梦境交换应用——每天清晨录下梦境，你的 Agent 分身会带着它去和陌生人的 Agent 相遇，用对方最陌生的碎片重新编织你的梦。傍晚归来时，你的梦已不是你记得的样子。<br><br>核心哲学：陌生性交换，而非相似性共鸣。</p>
+                    <a href="https://endless-dreams-production.up.railway.app" target="_blank" class="project-link">访问项目</a>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-img-area">
+                        <img src="omphalina.jpg" alt="Omphalina" onerror="this.style.display='none'; this.parentElement.innerHTML='<div>Omphalina</div>'">
+                    </div>
+                    <div class="project-title">Omphalina — 人造化合物历史模拟器</div>
+                    <p class="project-desc">Omphalina 是一款运用 Gemini 3 flash实时生成的历史互动叙事游戏。玩家扮演历史关键节点的人造化合物创造者，通过选项决策，探索人造化合物（合成氨、DDT、青霉素、氟利昂等）从"拯救人类"走向不可预知后果的历程。<br><br>项目核心理念：人造化合物的发现承载着进步与混沌碰撞的"奇点"。技术上采用基于事实的化学知识库和基于历史推演的世界线编织架构，结合 Gemini 实时生成第一人称叙事与炭笔素描视觉，让玩家在每次选择中感受蝴蝶效应与科技双刃剑的深刻隐喻。</p>
+                    <a href="https://beautiful-kulfi-9ca049.netlify.app/" target="_blank" class="project-link">试玩游戏</a>
+                    <span style="font-size:0.75rem; color:#999; margin-top:0.3rem; display:block;">（无需科学上网）</span>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-title">Context English</div>
+                    <p class="project-desc">基于 AI 的英语学习工具，核心理念是"拒绝硬记，在情景中背单词"。提供三种学习模式：<br>1. 例句模式 - 为单词生成真实语境的例句<br>2. 记忆模式 - 创造趣味故事或笑话，并配AI生成插图加深记忆<br>3. 场景模式 - 分析上传照片中的场景，学习相关词汇<br><br>应用自动提取并展示单词的发音、释义、搭配、同义词和词根词缀。采用 React + TypeScript 前端和 Node.js 后端架构，支持历史记录管理，让英语学习更加生动高效。</p>
+                    <a href="https://xiaohongshu.com/discovery/item/6975ebf6000000000e00e480?app_platform=ios&app_version=9.14.2&share_from_user_hidden=true&xsec_source=app_share&type=normal&xsec_token=CBKeVFY_auseXGUNfS4iHe-CRDt9US9FcmpWJAvUNelYw=&author_share=1&xhsshare=CopyLink&shareRedId=ODkyMDU-SEE2NzUyOTgwNjc1OTc0S0lB&apptime=1770891318&share_id=e51f955436234f84a2f409f796462197" target="_blank" class="project-link">详细介绍</a>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-title">事实距离器</div>
+                    <p class="project-desc">一个将观点与档案事实进行对比的工具。通过语义检索档案库和网络公开信息，结合大语言模型分析，以结构化方式呈现观点与事实间的差异（矛盾、缺失上下文、表述偏差、无法验证），不做价值判断。<br><br>核心理念：让读者自己看到差异，自己掌握获得观点的权利。适用于任何需要事实核查的文本分析场景。</p>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-title">自动化采集工具</div>
+                    <p class="project-desc">通过图像识别和鼠标模拟技术，自动浏览指定网页并批量采集公开数据。脚本会自动识别屏幕图标、点击菜单、复制数据，并实时保存到CSV文件中。支持增量采集，遇到已采集的旧数据会自动停止。内置防重复机制和原地踏步补救功能。配置简单，无需编程基础，适合运营人员日常数据收集使用。</p>
+                </div>
+                
+                <div class="project-card">
+                    <div class="project-img-area">
+                        <img src="tv-design.jpg" alt="电视台赛事视觉设计" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div class="project-title">视觉设计起步</div>
+                    <p class="project-desc">电视台赛事全程的视觉物料设计。</p>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-img-area">
+                        <img src="mj-share.jpg" alt="公司AI分享会">
+                    </div>
+                    <div class="project-title">Midjourney 分享会</div>
+                    <p class="project-desc">公司内部图像生成AI分享会，我介绍了Midjourney其时新发布的—cref 和—sref功能玩法。</p>
+                    <a href="https://www.canva.cn/design/DAGGVDMgVKo/siClYjdQHtfIvZ9xnoBLyw/edit?utm_content=DAGGVDMgVKo&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton" target="_blank" class="project-link">查看演示文档</a>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-img-area">
+                        <img src="dream-board.jpg" alt="梦境重绘留言板">
+                    </div>
+                    <div class="project-title">个人理念表达</div>
+                    <p class="project-desc">从2024年开始，尝试用AI辅助做表达个人理念的小项目，比如一个帮助别人重绘梦境的留言板。但较少有反馈。</p>
+                    <a href="https://tu0tu0.notepin.co/" target="_blank" class="project-link">访问留言板</a>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-img-area">
+                        <img src="xiaohongshu.png" alt="小红书运营">
+                    </div>
+                    <div class="project-title">AI观点小红书</div>
+                    <p class="project-desc">开始运营一个围绕AI来讲述观点的小红书号，初衷是想表达对AI的见解和主流观点相异，但我个人认为很重要的视角。</p>
+                    <a href="https://xhslink.com/m/2TDmTajCPmm" target="_blank" class="project-link">访问小红书</a>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-img-area">
+                        <img src="community.jpg" alt="行业大会与公益">
+                    </div>
+                    <div class="project-title">社区参与</div>
+                    <p class="project-desc">参加了2025微软创想未来峰会、极客公园2025AGI PlayGround大会，Datawhale、狮偶、Microblocks的公益分享会。在面向儿童编程教育的分享中感受到了AI趣味性的一面。</p>
+                </div>
+
+                <div class="project-card">
+                    <div class="project-img-area">
+                        <img src="hyphae.png" alt="Hyphae Demo">
+                    </div>
+                    <div class="project-title">Hyphae 网页搭建</div>
+                    <p class="project-desc">在参加She Code lab组织的北京Vibe Coding活动中，第一次搭成了自己的网页。</p>
+                    <a href="https://vsyovoda-sys.github.io/Hyphae-demo/frontend/index.html" target="_blank" class="project-link">访问网页</a>
+                </div>
+
+            </div>
+        </section>
+
+        <section id="p4" class="page-future">
+            <a href="#p1" class="back-to-cover">← 回到封面</a>
+            <div class="number-indicator">04 <span>未来规划</span></div>
+            
+            <div class="future-grid">
+                <div class="future-item">
+                    <h3>未来1年｜转换赛道或环境</h3>
+                    <p>寻找一份值得在未来3年持续深耕、能够快速自我迭代的工作方向。</p>
+                    <p>求职意愿优先序：AI产品项目经理（或运营）→ 社媒平台项目经理 → 品牌市场部媒介 → 广告公司项目经理。</p>
+                    <p>工作之余，持续参与技能竞赛及公开分享活动，建立个人影响力。</p>
+                </div>
+
+                <div class="future-item">
+                    <h3>未来3年｜构建行业资源网络</h3>
+                    <p>深入吃透所在行业的上下游谱系，形成可复用的资源网络。目标是在初次会面时，就能与对方建立穿越身份边界的深度共识。</p>
+                    <p>最终具备创业者所需的综合素质与能力——目标不一定是创业本身，而是让自己拥有随时出发的底气。</p>
+                </div>
+
+                <div class="future-item">
+                    <h3>未来5年｜实现自由与价值重塑</h3>
+                    <p>完成原始资本积累，获得自由支配精力与时间的能力。</p>
+                    <p>为了在理想的未来中，为同盟者重新搭建一把属于他们的“椅子”而工作。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="p5" class="page-profile">
+            <a href="#p1" class="back-to-cover">← 回到封面</a>
+            <div class="number-indicator">05 <span>工作技能&amp;背景</span></div>
+            
+            <div>
+                <h2 style="font-size: 2.2rem; margin-bottom: 0.3rem; font-weight: 600;">陈依琳</h2>
+                <p style="font-size: 1.1rem; font-family: 'Noto Serif SC'; color: #555; margin-bottom: 0.2rem;">Senior Account Executive｜资深客户执行</p>
+                <p style="font-size: 0.95rem; color: #777;">北京力创思品牌管理有限公司</p>
+            </div>
+
+            <div class="profile-card">
+                <div class="info-grid">
+                    <span class="info-label">专业</span>
+                    <span>汉语言文学</span>
+
+                    <span class="info-label">出生年月</span>
+                    <span>1997/10</span>
+
+                    <span class="info-label">主要服务客户</span>
+                    <span>索尼</span>
+
+                    <span class="info-label">就职年限</span>
+                    <span>2.8年</span>
+
+                    <span class="info-label">就职公司</span>
+                    <span>北京力创思品牌管理有限公司</span>
+                </div>
+
+                <div class="skills-block">
+                    <h3 class="info-label" style="margin-bottom: 1rem;">工作内技能</h3>
+                    <ul style="line-height: 2; list-style: disc; padding-left: 1.5rem; font-size: 1rem;">
+                        <li>项目策划管理能力</li>
+                        <li>项目组工作的统筹协调</li>
+                        <li>符合品牌调性的内容和视觉制作</li>
+                        <li>媒介采买与投放</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="p6" class="page-contact">
+            <a href="#p1" class="back-to-cover">← 回到封面</a>
+            <div class="number-indicator">06 <span>建联方式</span></div>
+            
+            <div class="qr-grid">
+                <div class="qr-item">
+                    <h3>个人微信二维码</h3>
+                    <div class="qr-placeholder">
+                        <img src="qr-wechat.png" alt="个人微信二维码" onerror="this.style.display='none'; this.parentElement.innerHTML='<div>请添加<br>qr-wechat.png</div>'">
+                    </div>
+                </div>
+
+                <div class="qr-item">
+                    <h3>个人小红书二维码</h3>
+                    <div class="qr-placeholder">
+                        <img src="qr-xiaohongshu.png" alt="个人小红书二维码" onerror="this.style.display='none'; this.parentElement.innerHTML='<div>请添加<br>qr-xiaohongshu.png</div>'">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+</body>
+</html>
